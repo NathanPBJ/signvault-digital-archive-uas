@@ -49,6 +49,14 @@ async function readJson(response) {
   return data;
 }
 
+async function apiFetch(url, options) {
+  try {
+    return await fetch(url, options);
+  } catch {
+    throw new Error('Backend tidak terhubung. Jalankan server Python di http://127.0.0.1:8000 lalu coba lagi.');
+  }
+}
+
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
 function Field({ label, children, full }) {
@@ -334,7 +342,7 @@ function ArchiveTab({ documents, loading, onRefresh }) {
   async function selectDoc(doc) {
     setSelectedId(doc.id);
     try {
-      const data = await fetch(`${API_BASE}/api/documents/${doc.id}`).then(readJson);
+      const data = await apiFetch(`${API_BASE}/api/documents/${doc.id}`).then(readJson);
       setSelectedDoc(data.document);
     } catch {
       setSelectedDoc(doc);
@@ -509,8 +517,8 @@ export default function App() {
     setLoading(true);
     try {
       const [docData, healthData] = await Promise.all([
-        fetch(`${API_BASE}/api/documents`).then(readJson),
-        fetch(`${API_BASE}/api/health`).then(readJson),
+        apiFetch(`${API_BASE}/api/documents`).then(readJson),
+        apiFetch(`${API_BASE}/api/health`).then(readJson),
       ]);
       setDocuments(docData.documents || []);
       setHealth(healthData);
@@ -530,7 +538,7 @@ export default function App() {
     Object.entries(form).forEach(([k, v]) => payload.append(k, v));
     setBusy(true);
     try {
-      const data = await fetch(`${API_BASE}/api/documents`, { method: 'POST', body: payload }).then(readJson);
+      const data = await apiFetch(`${API_BASE}/api/documents`, { method: 'POST', body: payload }).then(readJson);
       showToast(`Ditandatangani & diarsipkan: ${data.document.title}`);
       await loadAll();
       setTab('archive');
@@ -551,7 +559,7 @@ export default function App() {
     payload.append('file', file);
     setBusy(true);
     try {
-      const data = await fetch(`${API_BASE}/api/verify`, { method: 'POST', body: payload }).then(readJson);
+      const data = await apiFetch(`${API_BASE}/api/verify`, { method: 'POST', body: payload }).then(readJson);
       showToast(data.result.status === 'VALID' ? 'Dokumen terverifikasi — VALID.' : 'Peringatan: dokumen terindikasi DIMANIPULASI.');
       await loadAll();
       return data.result;
